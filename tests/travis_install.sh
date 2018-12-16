@@ -44,6 +44,8 @@ if [[ "$COVERAGE" == "true" ]]; then
     pip install coverage coveralls
 fi
 
+pip install tox
+pip install -U setuptools
 
 travis-cleanup() {
     printf "Cleaning up environments ... "  # printf avoids new lines
