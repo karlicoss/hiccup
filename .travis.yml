@@ -1,15 +1,19 @@
 sudo: false
 language: python
+env:
+  global:
+    - DISTRIB='ubuntu'
+    - COVERAGE='true'
 matrix:
   # ugh. do I really have to list all tox stuff here??
   include:
     - python: 3.5
-      env: DISTRIB="ubuntu" TOXENV='py35,flake8,mypy,pylint' COVERAGE="true"
+      env: TOXENV='py35,flake8,mypy,pylint'
     - python: 3.6
-      env: DISTRIB="ubuntu" TOXENV='py36,flake8,mypy,pylint' COVERAGE="true"
+      env: TOXENV='py36,flake8,mypy,pylint'
     - python: 3.7
       dist: xenial # https://github.com/travis-ci/travis-ci/issues/9815
-      env: DISTRIB="ubuntu" TOXENV='py37,flake8,mypy,pylint' COVERAGE="true"
+      env: TOXENV='py37,flake8,mypy,pylint'
 install:
   - source tests/travis_install.sh
   - pip install -r requirements.txt

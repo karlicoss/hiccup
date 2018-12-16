@@ -10,12 +10,24 @@ except DistributionNotFound:
 finally:
     del get_distribution, DistributionNotFound
 
+__author__ = "Dima Gerasimov"
+__copyright__ = "Dima Gerasimov"
+__license__ = "mit"
+
 
 import inspect
 import ctypes
 from typing import Any, List, Dict
 
+# pylint: disable=import-error
 from lxml import etree as ET
+
+
+def di(id_: int) -> Any:
+    """
+    Hacky inverse for id
+    """
+    return ctypes.cast(id_, ctypes.py_object).value # type: ignore
 
 
 class HikkupError(RuntimeError):
@@ -89,7 +101,7 @@ def xquery(obj, query: Xpath) -> List[Result]:
     xml = as_xml(obj)
     xelems = xml.xpath(query)
     py_ids = [int(x.attrib[_PY_ID]) for x in xelems]
-    return [ctypes.cast(py_id, ctypes.py_object).value for py_id in py_ids] # type: ignore
+    return [di(py_id) for py_id in py_ids]
 
 
 def xquery_single(obj: Any, query: Xpath) -> Result:

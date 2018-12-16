@@ -7,19 +7,19 @@ import pytest
 
 from lxml import etree as ET
 
-import hikkup
-from hikkup import as_xml, xquery, xfind, xfind_all
+from hikkup import as_xml, xfind, xfind_all
 
 __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
 __license__ = "mit"
+
 
 class Xml:
     """
     Helper to aid comparing xmls
     """
     def __init__(self, xmls: str) -> None:
-        self.xml = ET.fromstring(re.sub('\s', '', xmls, flags=re.MULTILINE))
+        self.xml = ET.fromstring(re.sub(r'\s', '', xmls, flags=re.MULTILINE))
 
     def __eq__(self, other: ET.ElementTree) -> bool:
         return Xml.elements_equal(self.xml, other)
@@ -30,15 +30,21 @@ class Xml:
         def without_pyid(attrs):
             return {k: v for k, v in attrs.items() if k != '_python_id'}
 
-        if e1.tag != e2.tag: return False
-        if e1.text != e2.text: return False
-        if e1.tail != e2.tail: return False
-        if without_pyid(e1.attrib) != without_pyid(e2.attrib): return False
-        if len(e1) != len(e2): return False
+        if e1.tag != e2.tag:
+            return False
+        if e1.text != e2.text:
+            return False
+        if e1.tail != e2.tail:
+            return False
+        if without_pyid(e1.attrib) != without_pyid(e2.attrib):
+            return False
+        if len(e1) != len(e2):
+            return False
 
         ch1 = sorted(e1, key=lambda e: e.tag)
         ch2 = sorted(e2, key=lambda e: e.tag)
         return all(Xml.elements_equal(c1, c2) for c1, c2 in zip(ch1, ch2))
+
 
 # TODO escaping??
 # TODO ?? https://lxml.de/objectify.html#type-annotations
