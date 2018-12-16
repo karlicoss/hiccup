@@ -8,7 +8,7 @@ import pytest
 from lxml import etree as ET
 
 import hikkup
-from hikkup import as_xml
+from hikkup import as_xml, xquery, xfind, xfind_all
 
 __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
@@ -37,13 +37,16 @@ class Xml:
     def __eq__(self, other):
         return Xml.elements_equal(self.xml, other)
 
-    # https://stackoverflow.com/a/24349916/706389
+    # based on https://stackoverflow.com/a/24349916/706389
     @staticmethod
     def elements_equal(e1, e2):
+        def without_pyid(attrs):
+            return {k: v for k, v in attrs.items() if k != '_python_id'}
+
         if e1.tag != e2.tag: return False
         if e1.text != e2.text: return False
         if e1.tail != e2.tail: return False
-        if e1.attrib != e2.attrib: return False
+        if without_pyid(e1.attrib) != without_pyid(e2.attrib): return False
         if len(e1) != len(e2): return False
 
         ch1 = sorted(e1, key=lambda e: e.tag)
@@ -86,5 +89,7 @@ def test_tree():
     <Tree><node>right</node><children></children></Tree>
 </children>
 </Tree>
-
     ''')
+
+    res = xfind(tt, '/Tree')
+    assert res is tt

@@ -12,6 +12,13 @@ finally:
 
 
 import inspect
+from typing import Any, List, Dict
+
+from lxml import etree as ET
+
+
+class HikkupError(RuntimeError):
+    pass
 
 
 
@@ -20,8 +27,7 @@ import inspect
 # TODO xquery on it
 
 Xpath = str
-
-from lxml import etree as ET
+Result = Any
 
 
 # TODO should be configurable..
@@ -46,14 +52,22 @@ def get_name(obj):
 
 # TODO depending on instance, return??
 
+_PY_ID = '_python_id'
+
+
+def make_elem(obj, name: str) -> ET.Element:
+    res = ET.Element(name)
+    res.set(_PY_ID, str(id(obj)))
+    return res
+
 def as_xml(obj) -> ET.Element:
     if is_list_like(obj):
-        res = ET.Element('listish')
+        res = make_elem(obj, 'listish')
         res.extend([as_xml(x) for x in obj])
         return res
 
     if is_primitive(obj):
-        el = ET.Element('primitivish')
+        el = make_elem(obj, 'primitivish')
         el.text = obj # TODO to string??
         return el
     # TODO if has adapter, use that
@@ -61,8 +75,7 @@ def as_xml(obj) -> ET.Element:
 
     attrs = get_attributes(obj)
 
-    # ee = ET.Element('root' if self.parent is None else 'org')
-    res = ET.Element(get_name(obj))
+    res = make_elem(obj, get_name(obj))
     for k, v in attrs:
         oo = as_xml(v)
         # TODO what's key for??
@@ -73,6 +86,22 @@ def as_xml(obj) -> ET.Element:
         # TODO python id?
     return res
 
-def xquery(obj, query: str):
-    # TODO simple adapter which just maps properties and fields?
-    pass
+# TODO maintain a map?..
+# TODO simple adapter which just maps properties and fields?
+def xquery(obj, query: Xpath) -> List[Result]:
+    xml = as_xml(obj)
+    xelems = xml.xpath(query)
+    py_ids = [int(x.attrib['_python_id']) for x in xelems]
+    import ctypes
+    return [ctypes.cast(py_id, ctypes.py_object).value for py_id in py_ids] # type: ignore
+
+
+def xquery_single(obj: Any, query: Xpath) -> Result:
+    res = xquery(obj, query)
+    if len(res) != 1:
+        raise HikkupError('{}: expected single result, got {} instead'.format(query, res))
+    return res[0]
+
+xfind = xquery_single
+xfind_all = xquery
+
