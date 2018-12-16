@@ -95,20 +95,29 @@ def as_xml(obj) -> ET.Element:
         # TODO subelement might be necessary here??
     return res
 
+class Hikkup:
+    def __init__(self) -> None:
+        pass
+
+    def xquery(self, obj: Any, query: Xpath) -> List[Result]:
+        xml = as_xml(obj)
+        xelems = xml.xpath(query)
+        py_ids = [int(x.attrib[_PY_ID]) for x in xelems]
+        return [di(py_id) for py_id in py_ids]
+
+    def xquery_single(self, obj: Any, query: Xpath) -> Result:
+       res = self.xquery(obj, query)
+       if len(res) != 1:
+           raise HikkupError('{}: expected single result, got {} instead'.format(query, res))
+       return res[0]
+
 # TODO maintain a map?..
 # TODO simple adapter which just maps properties and fields?
-def xquery(obj, query: Xpath) -> List[Result]:
-    xml = as_xml(obj)
-    xelems = xml.xpath(query)
-    py_ids = [int(x.attrib[_PY_ID]) for x in xelems]
-    return [di(py_id) for py_id in py_ids]
+def xquery(obj, query: Xpath, cls=Hikkup) -> List[Result]:
+    return cls().xquery(obj=obj, query=query)
 
-
-def xquery_single(obj: Any, query: Xpath) -> Result:
-    res = xquery(obj, query)
-    if len(res) != 1:
-        raise HikkupError('{}: expected single result, got {} instead'.format(query, res))
-    return res[0]
+def xquery_single(obj: Any, query: Xpath, cls=Hikkup) -> Result:
+    return cls().xquery_single(obj=obj, query=query)
 
 xfind = xquery_single
 xfind_all = xquery
