@@ -129,3 +129,18 @@ def test_types():
 
     x = X()
     res = as_xml(x)
+
+
+def test_recursive():
+    class X:
+        def __init__(self):
+            self.inf = None
+    a = X()
+    a.inf = a
+
+    h = Hiccup()
+    h.ignore(X, 'inf')
+    # TODO  a spec to ignore attributes?
+
+    h._as_xml(a)
+

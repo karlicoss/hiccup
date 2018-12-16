@@ -17,7 +17,7 @@ __license__ = "mit"
 
 import inspect
 import ctypes
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Type, Optional, Set, Tuple
 
 # pylint: disable=import-error
 from lxml import etree as ET
@@ -53,16 +53,20 @@ def is_list_like(obj):
 
 # TODO custom adapters?
 
-def get_attributes(obj: Any):
-    res = inspect.getmembers(obj, lambda x: not any([inspect.ismethod(x), inspect.isfunction(x)]))
-    return [(k, v) for k, v in res if not k.startswith('__')]
-
 def get_name(obj: Any):
     return type(obj).__name__
+
+AttrName = str
+
+class Spec:
+    def __init__(self, cls: Type[Any]) -> None:
+        self.ignore = set() # type: Set[AttrName]
+
 
 class Hiccup:
     def __init__(self) -> None:
         self._object_keeper = {} # type: Dict[int, Any]
+        self._specs = {} # type: Dict[Type[Any], Spec]
         self.python_id_attr = '_python_id'
 
     def to_string(self, pobj) -> str:
@@ -77,6 +81,25 @@ class Hiccup:
             return "true" if pobj else "false"
         else:
             raise HiccupError("Unexpected type: {}".format(type(pobj)))
+
+    def ignore(self, type_, attr: AttrName) -> None:
+        sp = self._specs.get(type_, None)
+        if sp is None:
+            sp = Spec(type_)
+            self._specs[type_] = sp
+        sp.ignore.add(attr)
+
+    def take_member(self, m) -> bool:
+        return not any([inspect.ismethod(m), inspect.isfunction(m)])
+
+    def take_name(self, a: AttrName) -> bool:
+        return not a.startswith('__')
+
+    def get_attributes(self, obj: Any) -> List[Tuple[AttrName, Any]]:
+        spec = self._specs.get(type(obj), None)
+        ignored = set() if spec is None else spec.ignore
+        res = inspect.getmembers(obj, self.take_member)
+        return [(attr, v) for attr, v in res if self.take_name(attr) and not attr in ignored]
 
     def _keep(self, obj: Any):
         """
@@ -103,7 +126,7 @@ class Hiccup:
         # TODO if has adapter, use that
         # otherwise, extract attributes...
 
-        attrs = get_attributes(obj)
+        attrs = self.get_attributes(obj)
 
         res = self._make_elem(obj, get_name(obj))
         for k, v in attrs:
