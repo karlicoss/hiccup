@@ -182,3 +182,18 @@ def test_ignore_class():
     </b>
 </A>
     ''')
+
+
+def test_custom_primitive():
+    from datetime import datetime
+    d = datetime(year=2000, month=5, day=5)
+
+    h = Hiccup()
+    h.primitive_factory.converters[datetime] = lambda x: x.strftime('%Y%m%d%H:%M:%S')
+
+    assert h._as_xml(d) == Xml('''
+<primitivish>
+2000050500:00:00
+</primitivish>
+    ''')
+

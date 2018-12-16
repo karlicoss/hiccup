@@ -40,10 +40,6 @@ Xpath = str
 Result = Any
 
 
-# TODO should be configurable..
-def is_primitive(obj):
-    return isinstance(obj, (bool, int, float, str))
-
 # TODO stringifyable? 
 def is_dict_like(obj):
     return isinstance(obj, (dict))
@@ -73,24 +69,39 @@ class Spec:
         return self._ignore_all or attr in self._ignore
 
 
+class PrimitiveFactory:
+    def as_primitive(self, obj: Any) -> Optional[str]:
+        """
+        None means non-primitive
+        """
+        raise NotImplemented
+
+
+class DefaultPrimitiveFactory(PrimitiveFactory):
+    def __init__(self) -> None:
+        self.converters = {
+            type(None): lambda x: 'none',
+            bool      : lambda x: 'true' if x else 'false',
+            int       : lambda x: str(x),
+            float     : lambda x: str(x),
+            str       : lambda x: x,
+        }
+
+    def as_primitive(self, obj: Any) -> Optional[str]:
+        conv = self.converters.get(type(obj), None)
+        if conv is None:
+            return None
+        else:
+            return conv(obj)
+
 class Hiccup:
     def __init__(self) -> None:
         self._object_keeper = {} # type: Dict[int, Any]
         self._specs = {} # type: Dict[Type[Any], Spec]
         self.python_id_attr = '_python_id'
+        self.primitive_factory = DefaultPrimitiveFactory()
 
-    def to_string(self, pobj) -> str:
-        """
-        The rule for converting primitive objects to strings
-        """
-        if pobj is None:
-            return "none"
-        elif isinstance(pobj, (int, float)):
-            return str(pobj)
-        elif isinstance(pobj, bool):
-            return "true" if pobj else "false"
-        else:
-            raise HiccupError("Unexpected type: {}".format(type(pobj)))
+            # raise HiccupError("Unexpected type: {}".format(type(pobj)))
 
     def ignore(self, type_, attr: Optional[AttrName]=None) -> None:
         """
@@ -133,10 +144,12 @@ class Hiccup:
             res = self._make_elem(obj, 'listish')
             res.extend([self._as_xml(x) for x in obj])
             return res
+        # TODO dict like
 
-        if is_primitive(obj):
+        prim = self.primitive_factory.as_primitive(obj)
+        if prim is not None:
             el = self._make_elem(obj, 'primitivish')
-            el.text = str(obj) # TODO to string??
+            el.text = prim
             return el
         # TODO if has adapter, use that
         # otherwise, extract attributes...
