@@ -48,12 +48,12 @@ def get_name(obj):
 
 def as_xml(obj) -> ET.Element:
     if is_list_like(obj):
-        res = ET.Element('TODO')
+        res = ET.Element('listish')
         res.extend([as_xml(x) for x in obj])
         return res
 
     if is_primitive(obj):
-        el = ET.Element('TODO')
+        el = ET.Element('primitivish')
         el.text = obj # TODO to string??
         return el
     # TODO if has adapter, use that

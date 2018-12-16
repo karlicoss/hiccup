@@ -50,19 +50,19 @@ class Xml:
         ch2 = sorted(e2, key=lambda e: e.tag)
         return all(Xml.elements_equal(c1, c2) for c1, c2 in zip(ch1, ch2))
 
-def fwf_test_as_xml():
+def test_as_xml():
     # TODO implicit root??
-    assert as_xml('test') == Xml('test')
+    assert as_xml('test') == Xml('<primitivish>test</primitivish>')
     # TODO ???
     # TODO implicit indices?
     # TODO make sure root name is configurable??
     # TODO escaping??
     # TODO ?? https://lxml.de/objectify.html#type-annotations
     assert as_xml(['first', 'second']) == Xml('''
-<root>
-    <0>first</0>
-    <1>second</1>
-</root>
+<listish>
+    <primitivish>first</primitivish>
+    <primitivish>second</primitivish>
+</listish>
     ''')
 
 
