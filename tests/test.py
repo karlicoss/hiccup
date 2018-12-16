@@ -117,3 +117,15 @@ def test_tree():
     assert len(resl) == 3
     # TODO not sure if we can generally control order...
     assert resl == [tt, left, right]
+
+
+def test_types():
+    class X:
+        def __init__(self):
+            self.first = 1
+            self.second = 12.3
+            self.third = False
+            self.fourth = None
+
+    x = X()
+    res = as_xml(x)

@@ -65,6 +65,19 @@ class Hiccup:
         self._object_keeper = {} # type: Dict[int, Any]
         self.python_id_attr = '_python_id'
 
+    def to_string(self, pobj) -> str:
+        """
+        The rule for converting primitive objects to strings
+        """
+        if pobj is None:
+            return "none"
+        elif isinstance(pobj, (int, float)):
+            return str(pobj)
+        elif isinstance(pobj, bool):
+            return "true" if pobj else "false"
+        else:
+            raise HiccupError("Unexpected type: {}".format(type(pobj)))
+
     def _keep(self, obj: Any):
         """
         Necessary to prevent temporaries from being GC'ed while querying
@@ -85,7 +98,7 @@ class Hiccup:
 
         if is_primitive(obj):
             el = self._make_elem(obj, 'primitivish')
-            el.text = obj # TODO to string??
+            el.text = str(obj) # TODO to string??
             return el
         # TODO if has adapter, use that
         # otherwise, extract attributes...
