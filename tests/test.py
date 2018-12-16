@@ -68,7 +68,6 @@ def fwf_test_as_xml():
 
 def test_simple():
     xx = Simple('test')
-    # TODO map class name?
     assert as_xml(xx) == Xml('''
 <Simple>
   <value>test</value>
@@ -76,8 +75,7 @@ def test_simple():
 </Simple>
     ''')
 
-
-def qqq_test_tree():
+def test_tree():
     tt = Tree('aaa', Tree('left'), Tree('right'))
     # TODO not sure if indices are a good idea?
     assert as_xml(tt) == Xml('''

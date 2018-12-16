@@ -32,7 +32,7 @@ def is_primitive(obj):
 def is_dict_like(obj):
     return isinstance(obj, (dict))
 
-def is_list_link(obj):
+def is_list_like(obj):
     return isinstance(obj, (list, tuple))
 
 # TODO custom adapters?
@@ -44,7 +44,14 @@ def get_attributes(obj):
 def get_name(obj):
     return type(obj).__name__
 
+# TODO depending on instance, return??
+
 def as_xml(obj) -> ET.Element:
+    if is_list_like(obj):
+        res = ET.Element('TODO')
+        res.extend([as_xml(x) for x in obj])
+        return res
+
     if is_primitive(obj):
         el = ET.Element('TODO')
         el.text = obj # TODO to string??
@@ -57,8 +64,8 @@ def as_xml(obj) -> ET.Element:
     # ee = ET.Element('root' if self.parent is None else 'org')
     res = ET.Element(get_name(obj))
     for k, v in attrs:
-        # TODO what's key for??
         oo = as_xml(v)
+        # TODO what's key for??
         oo.tag = k
         ## TODO class attribute??
         res.append(oo)
