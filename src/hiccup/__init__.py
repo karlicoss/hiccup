@@ -60,7 +60,17 @@ AttrName = str
 
 class Spec:
     def __init__(self, cls: Type[Any]) -> None:
-        self.ignore = set() # type: Set[AttrName]
+        self._ignore = set() # type: Set[AttrName]
+        self._ignore_all = False
+
+    def ignore(self, attr: AttrName) -> None:
+        self._ignore.add(attr)
+
+    def ignore_all(self):
+        self._ignore_all = True
+
+    def ignored(self, attr: AttrName) -> bool:
+        return self._ignore_all or attr in self._ignore
 
 
 class Hiccup:
@@ -82,12 +92,18 @@ class Hiccup:
         else:
             raise HiccupError("Unexpected type: {}".format(type(pobj)))
 
-    def ignore(self, type_, attr: AttrName) -> None:
+    def ignore(self, type_, attr: Optional[AttrName]=None) -> None:
+        """
+        If attr is None, ignore all of the calss attrs
+        """
         sp = self._specs.get(type_, None)
         if sp is None:
             sp = Spec(type_)
             self._specs[type_] = sp
-        sp.ignore.add(attr)
+        if attr is None:
+            sp.ignore_all()
+        else:
+            sp.ignore(attr)
 
     def take_member(self, m) -> bool:
         return not any([inspect.ismethod(m), inspect.isfunction(m)])
@@ -97,9 +113,8 @@ class Hiccup:
 
     def get_attributes(self, obj: Any) -> List[Tuple[AttrName, Any]]:
         spec = self._specs.get(type(obj), None)
-        ignored = set() if spec is None else spec.ignore
         res = inspect.getmembers(obj, self.take_member)
-        return [(attr, v) for attr, v in res if self.take_name(attr) and not attr in ignored]
+        return [(attr, v) for attr, v in res if self.take_name(attr) and not (spec is not None and spec.ignored(attr))]
 
     def _keep(self, obj: Any):
         """
@@ -127,6 +142,8 @@ class Hiccup:
         # otherwise, extract attributes...
 
         attrs = self.get_attributes(obj)
+        # print(self, attrs)
+        # import ipdb; ipdb.set_trace() 
 
         res = self._make_elem(obj, get_name(obj))
         for k, v in attrs:
@@ -147,6 +164,12 @@ class Hiccup:
        if len(res) != 1:
            raise HiccupError('{}: expected single result, got {} instead'.format(query, res))
        return res[0]
+
+    def xfind_all(self, *args, **kwargs):
+        return self.xquery(*args, **kwargs)
+
+    def xfind(self, *args, **kawrgs):
+        return self.xquery_single(*args, **kwargs)
 
 # TODO simple adapter which just maps properties and fields?
 def xquery(obj, query: Xpath, cls=Hiccup) -> List[Result]:

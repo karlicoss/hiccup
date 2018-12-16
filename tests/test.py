@@ -142,5 +142,43 @@ def test_recursive():
     h.ignore(X, 'inf')
     # TODO  a spec to ignore attributes?
 
+    # should not crash
     h._as_xml(a)
 
+def test_ignore_class():
+    class A:
+        def __init__(self):
+            self.x = None
+            self.b = None
+    class B:
+        def __init__(self):
+            self.xxx = '123'
+
+    a = A()
+    a.x = 'value'
+    a.b = B()
+
+    h = Hiccup()
+    res = h.xfind_all(a, '//B')
+    # TODO fuck, this might be inconsistent... 
+    # why do we use b over B?
+    # or maybe ok...
+    assert h._as_xml(a) == Xml('''
+<A>
+    <x>value</x>
+    <b>
+        <xxx>123</xxx>
+    </b>
+</A>
+    ''')
+
+
+    h.ignore(B)
+
+    assert h._as_xml(a) == Xml('''
+<A>
+    <x>value</x>
+    <b>
+    </b>
+</A>
+    ''')
