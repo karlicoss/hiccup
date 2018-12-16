@@ -3,15 +3,17 @@
 
 import re
 
-import pytest
-
 from lxml import etree as ET
 
-from hikkup import as_xml, xfind, xfind_all
+from hikkup import Hikkup, xfind, xfind_all
 
 __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
 __license__ = "mit"
+
+
+def as_xml(obj):
+    return Hikkup()._as_xml(obj)
 
 
 class Xml:
@@ -81,7 +83,6 @@ def test_simple():
     assert res == 'test'
 
 
-@pytest.mark.skip(reason="properties are broken presumably because they are returning temporaries")
 def test_simple_prop():
     xx = Simple('test')
 

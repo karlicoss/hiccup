@@ -53,56 +53,57 @@ def is_list_like(obj):
 
 # TODO custom adapters?
 
-def get_attributes(obj):
+def get_attributes(obj: Any):
     res = inspect.getmembers(obj, lambda x: not any([inspect.ismethod(x), inspect.isfunction(x)]))
     return [(k, v) for k, v in res if not k.startswith('__')]
 
-def get_name(obj):
+def get_name(obj: Any):
     return type(obj).__name__
-
-# TODO depending on instance, return??
-
-_PY_ID = '_python_id'
-
-
-def make_elem(obj, name: str) -> ET.Element:
-    res = ET.Element(name)
-    res.set(_PY_ID, str(id(obj)))
-    return res
-
-def as_xml(obj) -> ET.Element:
-    if is_list_like(obj):
-        res = make_elem(obj, 'listish')
-        res.extend([as_xml(x) for x in obj])
-        return res
-
-    if is_primitive(obj):
-        el = make_elem(obj, 'primitivish')
-        el.text = obj # TODO to string??
-        return el
-    # TODO if has adapter, use that
-    # otherwise, extract attributes...
-
-    attrs = get_attributes(obj)
-
-    res = make_elem(obj, get_name(obj))
-    for k, v in attrs:
-        oo = as_xml(v)
-        # TODO what's key for??
-        oo.tag = k
-        ## TODO class attribute??
-        res.append(oo)
-        # TODO subelement might be necessary here??
-    return res
 
 class Hikkup:
     def __init__(self) -> None:
-        pass
+        self._object_keeper = {} # type: Dict[int, Any]
+        self.python_id_attr = '_python_id'
+
+    def _keep(self, obj: Any):
+        """
+        Necessary to prevent temporaries from being GC'ed while querying
+        """
+        self._object_keeper[id(obj)] = obj
+
+    def _make_elem(self, obj: Any, name: str) -> ET.Element:
+        res = ET.Element(name)
+        self._keep(obj)
+        res.set(self.python_id_attr, str(id(obj)))
+        return res
+
+    def _as_xml(self, obj) -> ET.Element:
+        if is_list_like(obj):
+            res = self._make_elem(obj, 'listish')
+            res.extend([self._as_xml(x) for x in obj])
+            return res
+
+        if is_primitive(obj):
+            el = self._make_elem(obj, 'primitivish')
+            el.text = obj # TODO to string??
+            return el
+        # TODO if has adapter, use that
+        # otherwise, extract attributes...
+
+        attrs = get_attributes(obj)
+
+        res = self._make_elem(obj, get_name(obj))
+        for k, v in attrs:
+            oo = self._as_xml(v)
+            oo.tag = k
+            ## TODO class attribute??
+            res.append(oo)
+        return res
 
     def xquery(self, obj: Any, query: Xpath) -> List[Result]:
-        xml = as_xml(obj)
+        xml = self._as_xml(obj)
         xelems = xml.xpath(query)
-        py_ids = [int(x.attrib[_PY_ID]) for x in xelems]
+        py_ids = [int(x.attrib[self.python_id_attr]) for x in xelems]
         return [di(py_id) for py_id in py_ids]
 
     def xquery_single(self, obj: Any, query: Xpath) -> Result:
@@ -111,7 +112,6 @@ class Hikkup:
            raise HikkupError('{}: expected single result, got {} instead'.format(query, res))
        return res[0]
 
-# TODO maintain a map?..
 # TODO simple adapter which just maps properties and fields?
 def xquery(obj, query: Xpath, cls=Hikkup) -> List[Result]:
     return cls().xquery(obj=obj, query=query)
