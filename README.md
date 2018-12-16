@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/karlicoss/hikkup.svg?branch=master)](https://travis-ci.org/karlicoss/hikkup)
+[![Build Status](https://travis-ci.org/karlicoss/hiccup.svg?branch=master)](https://travis-ci.org/karlicoss/hiccup)
 
-# hikkup
+# hiccup
 
 A library for making xpath queries to arbitrary python objects and retreiving 'subobjects' as a result.
 

@@ -1,8 +1,8 @@
 ======
-hikkup
+hiccup
 ======
 
-This is the documentation of **hikkup**.
+This is the documentation of **hiccup**.
 
 .. note::
 

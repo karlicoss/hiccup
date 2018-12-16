@@ -35,7 +35,7 @@ except ImportError:
     from sphinx import apidoc
 
 output_dir = os.path.join(__location__, "api")
-module_dir = os.path.join(__location__, "../src/hikkup")
+module_dir = os.path.join(__location__, "../src/hiccup")
 try:
     shutil.rmtree(output_dir)
 except FileNotFoundError:
@@ -99,7 +99,7 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = u'hikkup'
+project = u'hiccup'
 copyright = u'2018, Dima Gerasimov'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -169,7 +169,7 @@ html_theme_options = {
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
 try:
-    from hikkup import __version__ as version
+    from hiccup import __version__ as version
 except ImportError:
     pass
 else:
@@ -234,7 +234,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'hikkup-doc'
+htmlhelp_basename = 'hiccup-doc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -253,7 +253,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'user_guide.tex', u'hikkup Documentation',
+  ('index', 'user_guide.tex', u'hiccup Documentation',
    u'Dima Gerasimov', 'manual'),
 ]
 

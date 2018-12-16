@@ -5,7 +5,7 @@ import re
 
 from lxml import etree as ET
 
-from hikkup import Hikkup, xfind, xfind_all
+from hiccup import Hiccup, xfind, xfind_all
 
 __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
@@ -13,7 +13,7 @@ __license__ = "mit"
 
 
 def as_xml(obj):
-    return Hikkup()._as_xml(obj)
+    return Hiccup()._as_xml(obj)
 
 
 class Xml:

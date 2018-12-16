@@ -30,7 +30,7 @@ def di(id_: int) -> Any:
     return ctypes.cast(id_, ctypes.py_object).value # type: ignore
 
 
-class HikkupError(RuntimeError):
+class HiccupError(RuntimeError):
     pass
 
 
@@ -60,7 +60,7 @@ def get_attributes(obj: Any):
 def get_name(obj: Any):
     return type(obj).__name__
 
-class Hikkup:
+class Hiccup:
     def __init__(self) -> None:
         self._object_keeper = {} # type: Dict[int, Any]
         self.python_id_attr = '_python_id'
@@ -109,14 +109,14 @@ class Hikkup:
     def xquery_single(self, obj: Any, query: Xpath) -> Result:
        res = self.xquery(obj, query)
        if len(res) != 1:
-           raise HikkupError('{}: expected single result, got {} instead'.format(query, res))
+           raise HiccupError('{}: expected single result, got {} instead'.format(query, res))
        return res[0]
 
 # TODO simple adapter which just maps properties and fields?
-def xquery(obj, query: Xpath, cls=Hikkup) -> List[Result]:
+def xquery(obj, query: Xpath, cls=Hiccup) -> List[Result]:
     return cls().xquery(obj=obj, query=query)
 
-def xquery_single(obj: Any, query: Xpath, cls=Hikkup) -> Result:
+def xquery_single(obj: Any, query: Xpath, cls=Hiccup) -> Result:
     return cls().xquery_single(obj=obj, query=query)
 
 xfind = xquery_single
