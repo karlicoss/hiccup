@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/karlicoss/hikkup.svg?branch=master)](https://travis-ci.org/karlicoss/hikkup)
+
 # hikkup
 
 Add a short description here!
