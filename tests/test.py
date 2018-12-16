@@ -197,3 +197,21 @@ def test_custom_primitive():
 </primitivish>
     ''')
 
+def test_name_mapping():
+    class A:
+        def __init__(self) -> None:
+            pass
+    ll = [
+        A(),
+        A(),
+    ]
+
+    h = Hiccup()
+    h.type_name_map.maps[A] = 'new_name'
+
+    assert h._as_xml(ll) == Xml('''
+<listish>
+    <new_name></new_name>
+    <new_name></new_name>
+</listish>
+''')

@@ -40,17 +40,11 @@ Xpath = str
 Result = Any
 
 
-# TODO stringifyable? 
 def is_dict_like(obj):
     return isinstance(obj, (dict))
 
 def is_list_like(obj):
     return isinstance(obj, (list, tuple))
-
-# TODO custom adapters?
-
-def get_name(obj: Any):
-    return type(obj).__name__
 
 AttrName = str
 
@@ -67,6 +61,18 @@ class Spec:
 
     def ignored(self, attr: AttrName) -> bool:
         return self._ignore_all or attr in self._ignore
+
+
+class TypeNameMap:
+    def __init__(self) -> None:
+        self.maps = {} # type: Dict[Type[Any], str]
+
+    def get_type_name(self, obj: Any) -> str:
+        tp = type(obj)
+        res = self.maps.get(tp, None)
+        if res is not None:
+            return res
+        return tp.__name__
 
 
 class PrimitiveFactory:
@@ -100,6 +106,7 @@ class Hiccup:
         self._specs = {} # type: Dict[Type[Any], Spec]
         self.python_id_attr = '_python_id'
         self.primitive_factory = DefaultPrimitiveFactory()
+        self.type_name_map = TypeNameMap()
 
             # raise HiccupError("Unexpected type: {}".format(type(pobj)))
 
@@ -158,7 +165,7 @@ class Hiccup:
         # print(self, attrs)
         # import ipdb; ipdb.set_trace() 
 
-        res = self._make_elem(obj, get_name(obj))
+        res = self._make_elem(obj, self.type_name_map.get_type_name(obj))
         for k, v in attrs:
             oo = self._as_xml(v)
             oo.tag = k
