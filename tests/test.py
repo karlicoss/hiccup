@@ -14,27 +14,14 @@ __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
 __license__ = "mit"
 
-
-class Tree:
-    def __init__(self, node: str, *children) -> None:
-        self.node = node
-        self.children = children
-
-
-class Simple:
-    def __init__(self, value) -> None:
-        self.value = value
-
-    @property
-    def prop(self):
-        return self.value
-
-
 class Xml:
-    def __init__(self, xmls: str):
+    """
+    Helper to aid comparing xmls
+    """
+    def __init__(self, xmls: str) -> None:
         self.xml = ET.fromstring(re.sub('\s', '', xmls, flags=re.MULTILINE))
 
-    def __eq__(self, other):
+    def __eq__(self, other: ET.ElementTree) -> bool:
         return Xml.elements_equal(self.xml, other)
 
     # based on https://stackoverflow.com/a/24349916/706389
@@ -53,14 +40,11 @@ class Xml:
         ch2 = sorted(e2, key=lambda e: e.tag)
         return all(Xml.elements_equal(c1, c2) for c1, c2 in zip(ch1, ch2))
 
+# TODO escaping??
+# TODO ?? https://lxml.de/objectify.html#type-annotations
+# TODO make sure root name is configurable??
 def test_as_xml():
-    # TODO implicit root??
     assert as_xml('test') == Xml('<primitivish>test</primitivish>')
-    # TODO ???
-    # TODO implicit indices?
-    # TODO make sure root name is configurable??
-    # TODO escaping??
-    # TODO ?? https://lxml.de/objectify.html#type-annotations
     assert as_xml(['first', 'second']) == Xml('''
 <listish>
     <primitivish>first</primitivish>
@@ -69,18 +53,46 @@ def test_as_xml():
     ''')
 
 
+class Simple:
+    def __init__(self, value) -> None:
+        self.value = value
+
+    @property
+    def prop(self):
+        return 'prop_' + self.value
+
+
 def test_simple():
     xx = Simple('test')
     assert as_xml(xx) == Xml('''
 <Simple>
   <value>test</value>
-  <prop>test</prop>
+  <prop>prop_test</prop>
 </Simple>
     ''')
 
+    res = xfind(xx, '//value')
+    assert res == 'test'
+
+
+@pytest.mark.skip(reason="properties are broken presumably because they are returning temporaries")
+def test_simple_prop():
+    xx = Simple('test')
+
+    res = xfind(xx, '//prop')
+    assert res == 'prop_test'
+
+
+class Tree:
+    def __init__(self, node: str, *children) -> None:
+        self.node = node
+        self.children = children
+
+
 def test_tree():
-    tt = Tree('aaa', Tree('left'), Tree('right'))
-    # TODO not sure if indices are a good idea?
+    left = Tree('left')
+    right = Tree('right')
+    tt = Tree('aaa', left, right)
     assert as_xml(tt) == Xml('''
 <Tree>
 <node>aaa</node>
@@ -93,3 +105,8 @@ def test_tree():
 
     res = xfind(tt, '/Tree')
     assert res is tt
+
+    resl = xfind_all(tt, '//Tree')
+    assert len(resl) == 3
+    # TODO not sure if we can generally control order...
+    assert resl == [tt, left, right]

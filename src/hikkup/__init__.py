@@ -12,6 +12,7 @@ finally:
 
 
 import inspect
+import ctypes
 from typing import Any, List, Dict
 
 from lxml import etree as ET
@@ -21,10 +22,7 @@ class HikkupError(RuntimeError):
     pass
 
 
-
-# TODO get instance of tree
 # TODO apply adapter?
-# TODO xquery on it
 
 Xpath = str
 Result = Any
@@ -83,7 +81,6 @@ def as_xml(obj) -> ET.Element:
         ## TODO class attribute??
         res.append(oo)
         # TODO subelement might be necessary here??
-        # TODO python id?
     return res
 
 # TODO maintain a map?..
@@ -91,8 +88,7 @@ def as_xml(obj) -> ET.Element:
 def xquery(obj, query: Xpath) -> List[Result]:
     xml = as_xml(obj)
     xelems = xml.xpath(query)
-    py_ids = [int(x.attrib['_python_id']) for x in xelems]
-    import ctypes
+    py_ids = [int(x.attrib[_PY_ID]) for x in xelems]
     return [ctypes.cast(py_id, ctypes.py_object).value for py_id in py_ids] # type: ignore
 
 
