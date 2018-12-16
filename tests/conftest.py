@@ -1,11 +1,14 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    Dummy conftest.py for hikkup.
+#!/usr/bin/env python3
 
-    If you don't know what this is for, just leave it empty.
-    Read more about conftest.py under:
-    https://pytest.org/latest/plugins.html
-"""
+import pytest
 
-# import pytest
+from lxml import etree as ET
+
+def pretty(xml):
+    return ET.tostring(xml, pretty_print=True, encoding='unicode').splitlines()
+
+def pytest_assertrepr_compare(op, left, right):
+    from test import Xml
+    if isinstance(right, Xml) and op == "==":
+        return ['Comparing xmls:',
+                '  left:', *['    ' + x for x in pretty(left)], '  right:', *['    ' + x for x in pretty(right.xml)]]
