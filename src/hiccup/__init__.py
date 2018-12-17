@@ -80,7 +80,7 @@ class PrimitiveFactory:
         """
         None means non-primitive
         """
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class DefaultPrimitiveFactory(PrimitiveFactory):
@@ -188,7 +188,7 @@ class Hiccup:
     def xfind_all(self, *args, **kwargs):
         return self.xquery(*args, **kwargs)
 
-    def xfind(self, *args, **kawrgs):
+    def xfind(self, *args, **kwargs):
         return self.xquery_single(*args, **kwargs)
 
 # TODO simple adapter which just maps properties and fields?

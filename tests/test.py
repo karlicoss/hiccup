@@ -128,7 +128,7 @@ def test_types():
             self.fourth = None
 
     x = X()
-    res = as_xml(x)
+    as_xml(x)  # should not crash
 
 
 def test_recursive():
@@ -145,11 +145,14 @@ def test_recursive():
     # should not crash
     h._as_xml(a)
 
+
 def test_ignore_class():
+
     class A:
         def __init__(self):
             self.x = None
             self.b = None
+
     class B:
         def __init__(self):
             self.xxx = '123'
@@ -159,8 +162,7 @@ def test_ignore_class():
     a.b = B()
 
     h = Hiccup()
-    res = h.xfind_all(a, '//B')
-    # TODO fuck, this might be inconsistent... 
+    # TODO fuck, this might be inconsistent...
     # why do we use b over B?
     # or maybe ok...
     assert h._as_xml(a) == Xml('''
@@ -171,7 +173,6 @@ def test_ignore_class():
     </b>
 </A>
     ''')
-
 
     h.ignore(B)
 
@@ -196,6 +197,7 @@ def test_custom_primitive():
 2000050500:00:00
 </primitivish>
     ''')
+
 
 def test_name_mapping():
     class A:
