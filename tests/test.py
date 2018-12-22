@@ -217,3 +217,16 @@ def test_name_mapping():
     <new_name></new_name>
 </listish>
 ''')
+
+
+def test_set_str():
+    ss = {
+        'aaa',
+        'bbb',
+        'ccc',
+    }
+
+    # shouldn't fail
+    xfind(ss, "/listish/*[text()='aaa']")
+    xfind(ss, "/listish/*[text()='bbb']")
+    xfind(ss, "/listish/*[text()='ccc']")

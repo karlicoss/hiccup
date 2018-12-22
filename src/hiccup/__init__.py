@@ -44,7 +44,7 @@ def is_dict_like(obj):
     return isinstance(obj, (dict))
 
 def is_list_like(obj):
-    return isinstance(obj, (list, tuple))
+    return isinstance(obj, (list, set, tuple))
 
 AttrName = str
 
