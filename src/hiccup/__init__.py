@@ -72,6 +72,7 @@ class TypeNameMap:
         res = self.maps.get(tp, None)
         if res is not None:
             return res
+
         return tp.__name__
 
 
@@ -147,6 +148,9 @@ class Hiccup:
         self._keep(obj)
         res.set(self.python_id_attr, str(id(obj)))
         return res
+
+    def _as_xmlstr(self, obj) -> str:
+        return ET.tostring(self._as_xml(obj), pretty_print=True, encoding='unicode')
 
     def _as_xml(self, obj) -> ET.Element:
         if is_list_like(obj):
