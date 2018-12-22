@@ -17,7 +17,7 @@ __license__ = "mit"
 
 import inspect
 import ctypes
-from typing import Any, List, Dict, Type, Optional, Set, Tuple
+from typing import Any, List, Dict, Type, Optional, Set, Tuple, Callable
 
 # pylint: disable=import-error
 from lxml import etree as ET
@@ -107,8 +107,10 @@ class Hiccup:
         self.python_id_attr = '_python_id'
         self.primitive_factory = DefaultPrimitiveFactory()
         self.type_name_map = TypeNameMap()
-
-            # raise HiccupError("Unexpected type: {}".format(type(pobj)))
+        """
+        Does some final rewriting of xml to query on
+        """
+        self.xml_hook = None # type: Optional[Callable[[ET], None]]
 
     def ignore(self, type_, attr: Optional[AttrName]=None) -> None:
         """
@@ -162,8 +164,6 @@ class Hiccup:
         # otherwise, extract attributes...
 
         attrs = self.get_attributes(obj)
-        # print(self, attrs)
-        # import ipdb; ipdb.set_trace() 
 
         res = self._make_elem(obj, self.type_name_map.get_type_name(obj))
         for k, v in attrs:
@@ -175,6 +175,9 @@ class Hiccup:
 
     def xquery(self, obj: Any, query: Xpath) -> List[Result]:
         xml = self._as_xml(obj)
+        if self.xml_hook is not None:
+            self.xml_hook(xml)
+
         xelems = xml.xpath(query)
         py_ids = [int(x.attrib[self.python_id_attr]) for x in xelems]
         return [di(py_id) for py_id in py_ids]
