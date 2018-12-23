@@ -230,3 +230,14 @@ def test_set_str():
     xfind(ss, "/listish/*[text()='aaa']")
     xfind(ss, "/listish/*[text()='bbb']")
     xfind(ss, "/listish/*[text()='ccc']")
+
+
+def test_error():
+    class A:
+        @property
+        def error(self):
+            raise RuntimeError
+    a = A()
+
+    # shouldn't result in runtime error
+    xfind(a, '//whatever')

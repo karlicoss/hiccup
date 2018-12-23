@@ -133,6 +133,7 @@ class Hiccup:
         return not a.startswith('__')
 
     def get_attributes(self, obj: Any) -> List[Tuple[AttrName, Any]]:
+        # TODO shit. inspect may result in exception even though we weren't intending to looking at the value :(
         res = inspect.getmembers(obj, self.take_member)
         return [(attr, v) for attr, v in res if self.take_name(attr)]
 
