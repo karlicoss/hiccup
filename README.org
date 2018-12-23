@@ -1,0 +1,55 @@
+#+FILETAGS: hikkup
+#+HTML: <a href="https://travis-ci.org/karlicoss/hiccup"><img src="https://travis-ci.org/karlicoss/hiccup.svg?branch=master"></img></a>
+
+
+A library for making xpath queries to arbitrary python objects and retreiving 'subobjects' as a result.
+
+* Motivation
+Originally came from [[https://github.com/karlicoss/porg][porg]] which is a tool I implemented to query things from my Org-mode notes and logs. But perhaps there are be more uses to this!
+  
+* Usage example
+See [[https://github.com/karlicoss/hiccup/blob/master/tests/test.py][tests]], but here's a (made-up) example:
+
+#+BEGIN_SRC python
+from hiccup import *
+class Tree:
+    def __init__(self, node, *children):
+        self.node = node
+        self.children = children
+
+    __repr__ = lambda s: repr(s.__dict__)
+
+left = Tree('left')
+right = Tree('right')
+tt = Tree('aaa', left, right)
+#+END_SRC
+
+As an intermediate xml, it looks somewhat like that:
+
+#+BEGIN_SRC xml
+>>> print(Hiccup()._as_xmlstr(tt))
+<Tree _python_id="140684831777792">
+  <children _python_id="140684845499144">
+    <Tree _python_id="140684831777848">
+      <children _python_id="140685393653832"/>
+      <node _python_id="140685362678000">left</node>
+    </Tree>
+    <Tree _python_id="140684831777680">
+      <children _python_id="140685393653832"/>
+      <node _python_id="140685362678056">right</node>
+    </Tree>
+  </children>
+  <node _python_id="140684856442808">aaa</node>
+</Tree>
+#+END_SRC
+
+to actually query, we can use ~hiccup.xfind~ or a ~hiccup.Hiccup~ class which allows some extra configuration.
+
+#+BEGIN_SRC python
+res = xfind(tt, '//Tree[./node[text()="left"]]')
+assert res is left
+#+END_SRC
+
+
+* TODOs
+*** TODO [2018-12-11 Tue 06:38] abstract away from xpath? e.g. allow to use jq-style queries
