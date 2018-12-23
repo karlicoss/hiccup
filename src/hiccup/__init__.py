@@ -22,6 +22,8 @@ from typing import Any, List, Dict, Type, Optional, Set, Tuple, Callable
 # pylint: disable=import-error
 from lxml import etree as ET
 
+from . import myinspect
+
 
 def di(id_: int) -> Any:
     """
@@ -134,7 +136,7 @@ class Hiccup:
 
     def get_attributes(self, obj: Any) -> List[Tuple[AttrName, Any]]:
         # TODO shit. inspect may result in exception even though we weren't intending to looking at the value :(
-        res = inspect.getmembers(obj, self.take_member)
+        res = myinspect.getmembers(obj, self.take_member)
         return [(attr, v) for attr, v in res if self.take_name(attr)]
 
     def _keep(self, obj: Any):

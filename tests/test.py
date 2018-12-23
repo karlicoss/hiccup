@@ -240,4 +240,5 @@ def test_error():
     a = A()
 
     # shouldn't result in runtime error
-    xfind(a, '//whatever')
+    xfind_all(a, '//whatever')
+    # TODO more reasonable error repr in xml??
