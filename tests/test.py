@@ -6,6 +6,7 @@ import re
 from lxml import etree as ET
 
 from hiccup import Hiccup, xfind, xfind_all
+from hiccup import IfParentType, IfType, IfName
 
 __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
@@ -13,7 +14,7 @@ __license__ = "mit"
 
 
 def as_xml(obj):
-    return Hiccup()._as_xml(obj)
+    return Hiccup().as_xml(obj)
 
 
 class Xml:
@@ -139,14 +140,13 @@ def test_recursive():
     a.inf = a
 
     h = Hiccup()
-    h.ignore(X, 'inf')
-    # TODO  a spec to ignore attributes?
+    h.exclude(IfParentType(X), IfName('inf'))
 
     # should not crash
-    h._as_xml(a)
+    h.as_xml(a)
 
 
-def test_ignore_class():
+def test_exclude_class():
 
     class A:
         def __init__(self):
@@ -165,7 +165,7 @@ def test_ignore_class():
     # TODO fuck, this might be inconsistent...
     # why do we use b over B?
     # or maybe ok...
-    assert h._as_xml(a) == Xml('''
+    assert h.as_xml(a) == Xml('''
 <A>
     <x>value</x>
     <b>
@@ -174,9 +174,9 @@ def test_ignore_class():
 </A>
     ''')
 
-    h.ignore(B)
+    h.exclude(IfParentType(B))
 
-    assert h._as_xml(a) == Xml('''
+    assert h.as_xml(a) == Xml('''
 <A>
     <x>value</x>
     <b>
@@ -192,7 +192,7 @@ def test_custom_primitive():
     h = Hiccup()
     h.primitive_factory.converters[datetime] = lambda x: x.strftime('%Y%m%d%H:%M:%S')
 
-    assert h._as_xml(d) == Xml('''
+    assert h.as_xml(d) == Xml('''
 <primitivish>
 2000050500:00:00
 </primitivish>
@@ -211,7 +211,7 @@ def test_name_mapping():
     h = Hiccup()
     h.type_name_map.maps[A] = 'new_name'
 
-    assert h._as_xml(ll) == Xml('''
+    assert h.as_xml(ll) == Xml('''
 <listish>
     <new_name></new_name>
     <new_name></new_name>

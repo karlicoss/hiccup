@@ -37,30 +37,31 @@ class HiccupError(RuntimeError):
 # TODO apply adapter?
 
 Xpath = str
+AttrName = str
+Context = List[Tuple[Optional[AttrName], Any]] # 'path' to the object, including itself
 Result = Any
 
+Check = Callable[[Context], bool]
 
-def is_dict_like(obj):
-    return isinstance(obj, (dict))
+def IfType(cls: Type[Any]) -> Check:
+    def check(ctx):
+        me = ctx[-1]
+        return type(me[1]) == cls
+    return check
 
-def is_list_like(obj):
-    return isinstance(obj, (list, set, tuple))
+def IfParentType(cls: Type[Any]) -> Check:
+    def check(ctx):
+        if len(ctx) < 2:
+            return False
+        p = ctx[-2]
+        return type(p[1]) == cls
+    return check
 
-AttrName = str
-
-class Spec:
-    def __init__(self, cls: Type[Any]) -> None:
-        self._ignore = set() # type: Set[AttrName]
-        self._ignore_all = False
-
-    def ignore(self, attr: AttrName) -> None:
-        self._ignore.add(attr)
-
-    def ignore_all(self):
-        self._ignore_all = True
-
-    def ignored(self, attr: AttrName) -> bool:
-        return self._ignore_all or attr in self._ignore
+def IfName(name: AttrName) -> Check:
+    def check(ctx):
+        p = ctx[-1]
+        return p[0] == name
+    return check
 
 
 class TypeNameMap:
@@ -101,10 +102,16 @@ class DefaultPrimitiveFactory(PrimitiveFactory):
         else:
             return conv(obj)
 
+def is_dict_like(obj):
+    return isinstance(obj, (dict))
+
+def is_list_like(obj):
+    return isinstance(obj, (list, set, tuple))
+
 class Hiccup:
     def __init__(self) -> None:
         self._object_keeper = {} # type: Dict[int, Any]
-        self._specs = {} # type: Dict[Type[Any], Spec]
+        self._exclude = [] # type: List[Tuple[Check]]
         self.python_id_attr = '_python_id'
         self.primitive_factory = DefaultPrimitiveFactory()
         self.type_name_map = TypeNameMap()
@@ -113,29 +120,21 @@ class Hiccup:
         """
         self.xml_hook = None # type: Optional[Callable[[ET], None]]
 
-    def ignore(self, type_, attr: Optional[AttrName]=None) -> None:
+    def exclude(self, *conditions) -> None:
         """
-        If attr is None, ignore all of the calss attrs
+        Excludes the thing respecting all of these predicates from xml converstion. Helpful to eliminate recursion.
         """
-        sp = self._specs.get(type_, None)
-        if sp is None:
-            sp = Spec(type_)
-            self._specs[type_] = sp
-        if attr is None:
-            sp.ignore_all()
-        else:
-            sp.ignore(attr)
+        self._exclude.append(conditions) # type: ignore
 
-    def take_member(self, m) -> bool:
+    def take_member(self, m: Any) -> bool:
         return not any([inspect.ismethod(m), inspect.isfunction(m)])
 
     def take_name(self, a: AttrName) -> bool:
         return not a.startswith('__')
 
     def get_attributes(self, obj: Any) -> List[Tuple[AttrName, Any]]:
-        spec = self._specs.get(type(obj), None)
         res = inspect.getmembers(obj, self.take_member)
-        return [(attr, v) for attr, v in res if self.take_name(attr) and not (spec is not None and spec.ignored(attr))]
+        return [(attr, v) for attr, v in res if self.take_name(attr)]
 
     def _keep(self, obj: Any):
         """
@@ -150,36 +149,58 @@ class Hiccup:
         return res
 
     def _as_xmlstr(self, obj) -> str:
-        return ET.tostring(self._as_xml(obj), pretty_print=True, encoding='unicode')
+        return ET.tostring(self.as_xml(obj), pretty_print=True, encoding='unicode')
 
-    def _as_xml(self, obj) -> ET.Element:
+    def _is_excluded(self, ctx: Context) -> bool:
+        for ll in self._exclude:
+            if all([l(ctx) for l in ll]):
+                return True
+        return False
+
+    def _as_xml(self, ctx: Context) -> Optional[ET.Element]:
+        if self._is_excluded(ctx):
+            return None
+        name, obj = ctx[-1]
+
         if is_list_like(obj):
             res = self._make_elem(obj, 'listish')
-            res.extend([self._as_xml(x) for x in obj])
+            for x in obj:
+                ctx.append((None, x))
+                rr = self._as_xml(ctx)
+                ctx.pop()
+                if rr is not None:
+                    res.append(rr)
             return res
-        # TODO dict like
 
         prim = self.primitive_factory.as_primitive(obj)
         if prim is not None:
             el = self._make_elem(obj, 'primitivish')
             el.text = prim
             return el
-        # TODO if has adapter, use that
-        # otherwise, extract attributes...
 
         attrs = self.get_attributes(obj)
 
+        # TODO dict like
         res = self._make_elem(obj, self.type_name_map.get_type_name(obj))
         for k, v in attrs:
-            oo = self._as_xml(v)
-            oo.tag = k
-            ## TODO class attribute??
-            res.append(oo)
+            ctx.append((k, v))
+            oo = self._as_xml(ctx)
+            ctx.pop()
+            if oo is not None:
+                oo.tag = k
+                ## TODO class attribute??
+                res.append(oo)
         return res
 
+    def as_xml(self, obj: Any) -> Optional[ET.Element]:
+        return self._as_xml([(None, obj)])
+
     def xquery(self, obj: Any, query: Xpath) -> List[Result]:
-        xml = self._as_xml(obj)
+        xml = self.as_xml(obj)
+        assert xml is not None
+
         if self.xml_hook is not None:
+            # pylint: disable=not-callable
             self.xml_hook(xml)
 
         xelems = xml.xpath(query)
@@ -198,7 +219,6 @@ class Hiccup:
     def xfind(self, *args, **kwargs):
         return self.xquery_single(*args, **kwargs)
 
-# TODO simple adapter which just maps properties and fields?
 def xquery(obj, query: Xpath, cls=Hiccup) -> List[Result]:
     return cls().xquery(obj=obj, query=query)
 
