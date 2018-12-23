@@ -6,7 +6,7 @@ import re
 from lxml import etree as ET
 
 from hiccup import Hiccup, xfind, xfind_all
-from hiccup import IfParentType, IfType, IfName
+from hiccup import IfParentType, IfName
 
 __author__ = "Dima Gerasimov"
 __copyright__ = "Dima Gerasimov"
