@@ -265,3 +265,17 @@ def test_query_dict():
     res = xfind_all(d, '//child/subchild')
 
     assert len(res) == 1
+
+
+# TODO ugh. maybe manually escape class names??
+# this makes it pretty tricky though, since lxml code is C...
+# ok, for now just skip it
+# also xml word is reserved..
+# for now test it doesn't crash
+def test_bad_tag_filtered():
+    class A:
+        pass
+    setattr(A, '<bad>', 'hello')
+
+    a = A()
+    as_xml(a)

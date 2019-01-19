@@ -226,9 +226,16 @@ class Hiccup:
             oo = self._as_xml(ctx)
             ctx.pop()
             if oo is not None:
-                oo.tag = k
-                ## TODO class attribute??
-                res.append(oo)
+                try:
+                    oo.tag = k
+                    ## TODO class attribute??
+                    res.append(oo)
+                except ValueError as e:
+                    if 'Invalid tag name' in str(e):
+                        # TODO log??
+                        pass
+                    else:
+                        raise e
         return res
 
     def as_xml(self, obj: Any) -> Optional[ET.Element]:
