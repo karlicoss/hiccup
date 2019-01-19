@@ -252,3 +252,16 @@ def test_bad_characters():
     res = xfind_all(sss, '//*[contains(text(), "behave")]')
 
     assert len(res) == 1
+
+
+# TODO not sure... should that be configurable? going into all dictionaries might be pretty expensive
+def test_query_dict():
+    d = {
+        'child': {
+            'subchild': 'hello',
+        }
+    }
+
+    res = xfind_all(d, '//child/subchild')
+
+    assert len(res) == 1

@@ -123,8 +123,19 @@ class DefaultListFactory(ListFactory):
         return list(obj)
 
 
-def is_dict_like(obj):
-    return isinstance(obj, (dict))
+class DictFactory:
+    def as_dict(self, obj: Any) -> Optional[Dict]:
+        """
+        None means not a dict
+        """
+        raise NotImplementedError
+
+
+class DefaultDictFactory:
+    def as_dict(self, obj: Any) -> Optional[Dict]:
+        if not isinstance(obj, (dict)):
+            return None
+        return obj
 
 
 class Hiccup:
@@ -134,7 +145,7 @@ class Hiccup:
         self.python_id_attr = '_python_id'
         self.primitive_factory = DefaultPrimitiveFactory()
         self.list_factory = DefaultListFactory()
-        # self.dict_factory = DefaultDictFactory()
+        self.dict_factory = DefaultDictFactory()
         self.type_name_map = TypeNameMap()
         """
         Does some final rewriting of xml to query on
@@ -201,9 +212,14 @@ class Hiccup:
             el.text = prim
             return el
 
-        attrs = self.get_attributes(obj)
+        # everything else will be kinda like dictionary now
 
-        # TODO dict like
+        dd = self.dict_factory.as_dict(obj)
+        if dd is not None:
+            attrs = list(dd.items())
+        else:
+            attrs = self.get_attributes(obj)
+
         res = self._make_elem(obj, self.type_name_map.get_type_name(obj))
         for k, v in attrs:
             ctx.append((k, v))
