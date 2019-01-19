@@ -108,11 +108,24 @@ class DefaultPrimitiveFactory(PrimitiveFactory):
         else:
             return conv(obj)
 
+class ListFactory:
+    def as_list(self, obj: Any) -> Optional[List]:
+        """
+        None means non-list
+        """
+        raise NotImplementedError
+
+
+class DefaultListFactory(ListFactory):
+    def as_list(self, obj: Any) -> Optional[List]:
+        if not isinstance(obj, (list, set, tuple)):
+            return None
+        return list(obj)
+
+
 def is_dict_like(obj):
     return isinstance(obj, (dict))
 
-def is_list_like(obj):
-    return isinstance(obj, (list, set, tuple))
 
 class Hiccup:
     def __init__(self) -> None:
@@ -120,6 +133,8 @@ class Hiccup:
         self._exclude = [] # type: List[Tuple[Check]]
         self.python_id_attr = '_python_id'
         self.primitive_factory = DefaultPrimitiveFactory()
+        self.list_factory = DefaultListFactory()
+        # self.dict_factory = DefaultDictFactory()
         self.type_name_map = TypeNameMap()
         """
         Does some final rewriting of xml to query on
@@ -169,7 +184,8 @@ class Hiccup:
             return None
         name, obj = ctx[-1]
 
-        if is_list_like(obj):
+        ll = self.list_factory.as_list(obj)
+        if ll is not None:
             res = self._make_elem(obj, 'listish')
             for x in obj:
                 ctx.append((None, x))
