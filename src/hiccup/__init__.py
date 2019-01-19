@@ -18,6 +18,7 @@ __license__ = "mit"
 import inspect
 import ctypes
 from typing import Any, List, Dict, Type, Optional, Set, Tuple, Callable
+import unicodedata
 
 # pylint: disable=import-error
 from lxml import etree as ET
@@ -30,6 +31,10 @@ def di(id_: int) -> Any:
     Hacky inverse for id
     """
     return ctypes.cast(id_, ctypes.py_object).value # type: ignore
+
+
+def remove_control_characters(s):
+    return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
 
 
 class HiccupError(RuntimeError):
@@ -86,7 +91,6 @@ class PrimitiveFactory:
         """
         raise NotImplementedError
 
-
 class DefaultPrimitiveFactory(PrimitiveFactory):
     def __init__(self) -> None:
         self.converters = {
@@ -94,7 +98,7 @@ class DefaultPrimitiveFactory(PrimitiveFactory):
             bool      : lambda x: 'true' if x else 'false',
             int       : lambda x: str(x),
             float     : lambda x: str(x),
-            str       : lambda x: x,
+            str       : lambda x: remove_control_characters(x),
         }
 
     def as_primitive(self, obj: Any) -> Optional[str]:

@@ -242,3 +242,13 @@ def test_error():
     # shouldn't result in runtime error
     xfind_all(a, '//whatever')
     # TODO more reasonable error repr in xml??
+
+
+def test_bad_characters():
+    sss = {
+        "can behave di\x0berently",
+    }
+
+    res = xfind_all(sss, '//*[contains(text(), "behave")]')
+
+    assert len(res) == 1
