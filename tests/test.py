@@ -242,6 +242,7 @@ def test_error():
     # shouldn't result in runtime error
     xfind_all(a, '//whatever')
     # TODO more reasonable error repr in xml??
+    # TODO maybe warn via warnings module??
 
 
 def test_bad_characters():
@@ -279,3 +280,25 @@ def test_bad_tag_filtered():
 
     a = A()
     as_xml(a)
+
+
+def test_exclude_member():
+    triggered = [False]
+
+    class A:
+        @property
+        def do_not_include(self):
+            triggered[0] = True
+            return 1
+
+        @property
+        def include(self):
+            return 'included'
+
+    a = A()
+
+    h = Hiccup()
+    h.exclude(IfParentType(A), IfName('do_not_include'))
+    assert h.xfind(a, '//include') == 'included'
+
+    assert not triggered[0]

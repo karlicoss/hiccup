@@ -1,16 +1,18 @@
 from inspect import getmro, isclass
+from typing import Set
 import types
 """
 a copy of inspect.getmembers but capable of error handling
 TODO maybe, commit it to python? could it be useful??
 """
 
+_inprogress = object()
 
 class InspectError(RuntimeError):
     pass
 
 
-def getmembers(object, predicate=None):
+def getmembers(object, path, excluded):
     """Return all members of an object as (name, value) pairs sorted by name.
     Optionally, only return members that satisfy a given predicate."""
     if isclass(object):
@@ -18,7 +20,7 @@ def getmembers(object, predicate=None):
     else:
         mro = ()
     results = []
-    processed = set()
+    processed = set() # type: Set[str]
     names = dir(object)
     # :dd any DynamicClassAttributes to the list of names if object is a class;
     # this may result in duplicate entries if, for example, a virtual
@@ -31,6 +33,8 @@ def getmembers(object, predicate=None):
     except AttributeError:
         pass
     for key in names:
+        if excluded(path + [(key, _inprogress)]):
+            continue
         # First try to get the value via getattr.  Some descriptors don't
         # like calling their __get__ (see bug #1785), so fall back to
         # looking in the __dict__.
@@ -54,7 +58,7 @@ def getmembers(object, predicate=None):
                 raise InspectError from ex
             except InspectError as ie:
                 value = ie
-        if isinstance(value, InspectError) or not predicate or predicate(value):
+        if isinstance(value, InspectError) or not excluded(path + [(key, value)]):
             results.append((key, value))
         processed.add(key)
     results.sort(key=lambda pair: pair[0])

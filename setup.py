@@ -21,4 +21,10 @@ except VersionConflict:
 
 
 if __name__ == "__main__":
-    setup(use_pyscaffold=True)
+    setup(
+        # ugh. couldn't manage to specify it in setup.cfg
+        package_data = {
+            'hiccup': ['py.typed'],
+        },
+        use_pyscaffold=True,
+    )

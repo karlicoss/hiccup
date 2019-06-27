@@ -17,6 +17,7 @@ __license__ = "mit"
 
 import inspect
 import ctypes
+import re
 from typing import Any, List, Dict, Type, Optional, Set, Tuple, Callable
 import unicodedata
 
@@ -51,23 +52,43 @@ Result = Any
 Check = Callable[[Context], bool]
 
 def IfType(cls: Type[Any]) -> Check:
-    def check(ctx):
+    def check(ctx: Context) -> bool:
         me = ctx[-1]
         return type(me[1]) == cls
     return check
 
+
 def IfParentType(cls: Type[Any]) -> Check:
-    def check(ctx):
+    def check(ctx: Context) -> bool:
         if len(ctx) < 2:
             return False
         p = ctx[-2]
         return type(p[1]) == cls
     return check
 
+
 def IfName(name: AttrName) -> Check:
-    def check(ctx):
+    def check(ctx: Context) -> bool:
         p = ctx[-1]
         return p[0] == name
+    return check
+
+
+def IfNameMatches(regex) -> Check:
+    def check(ctx: Context) -> bool:
+        p = ctx[-1]
+        name = p[0]
+        if name is None:
+            return False
+        return re.fullmatch(regex, name) is not None
+    return check
+
+
+def IfValueMatches(predicate: Callable[[Any], bool]) -> Check:
+    def check(ctx: Context) -> bool:
+        p = ctx[-1]
+        value = p[1]
+        return predicate(value)
     return check
 
 
@@ -151,6 +172,14 @@ class Hiccup:
         Does some final rewriting of xml to query on
         """
         self.xml_hook = None # type: Optional[Callable[[ET], None]]
+        self._exclude.extend(Hiccup.default_excludes())
+
+    @staticmethod
+    def default_excludes():
+        return [
+            (IfNameMatches('__.*'),),
+            (IfValueMatches(lambda x: inspect.ismethod(x) or inspect.isfunction(x)), ),
+        ]
 
     def exclude(self, *conditions) -> None:
         """
@@ -158,16 +187,10 @@ class Hiccup:
         """
         self._exclude.append(conditions) # type: ignore
 
-    def take_member(self, m: Any) -> bool:
-        return not any([inspect.ismethod(m), inspect.isfunction(m)])
-
-    def take_name(self, a: AttrName) -> bool:
-        return not a.startswith('__')
-
-    def get_attributes(self, obj: Any) -> List[Tuple[AttrName, Any]]:
+    # TODO rename Context to Path?
+    def _get_attributes(self, obj: Any, path: Context) -> List[Tuple[AttrName, Any]]:
         # TODO shit. inspect may result in exception even though we weren't intending to looking at the value :(
-        res = myinspect.getmembers(obj, self.take_member)
-        return [(attr, v) for attr, v in res if self.take_name(attr)]
+        return myinspect.getmembers(obj, path=path, excluded=self._is_excluded)
 
     def _keep(self, obj: Any):
         """
@@ -218,7 +241,7 @@ class Hiccup:
         if dd is not None:
             attrs = list(dd.items())
         else:
-            attrs = self.get_attributes(obj)
+            attrs = self._get_attributes(obj, ctx)
 
         res = self._make_elem(obj, self.type_name_map.get_type_name(obj))
         for k, v in attrs:
